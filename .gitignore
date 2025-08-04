@@ -1,0 +1,9 @@
+node_modules
+dist
+public
+.env
+projectConfig.json
+**/assets/styles.css
+.DS_Store
+*.sqlite
+coverage

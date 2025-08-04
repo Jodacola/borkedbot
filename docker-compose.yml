@@ -1,0 +1,13 @@
+version: '3.8'
+services:
+  borkedbot:
+    build:
+      dockerfile: ./Dockerfile
+    ports:
+      - "8000:3000"
+    restart: unless-stopped
+    environment:
+      - GITHUB_TOKEN=${GITHUB_TOKEN}
+      - GITHUB_SYNC_ENABLED=${GITHUB_SYNC_ENABLED}
+    volumes:
+      - ./data:/app/data
