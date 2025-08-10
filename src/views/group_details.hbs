@@ -235,30 +235,6 @@
             }])
         };
 
-        /*
-
-        datasets: [
-                {
-                    label: 'Failing PRs',
-                    data: sortedSnapshots.map(s => s.numberOfFailedPrs),
-                    backgroundColor: 'rgba(239, 68, 68, 0.6)',
-                    borderColor: 'rgba(239, 68, 68, 1)',
-                    borderWidth: 1,
-                    fill: true
-                },
-                {
-                    label: 'Passing/Pending PRs',
-                    data: sortedSnapshots.map(s => s.numberOfPrs - s.numberOfFailedPrs),
-                    backgroundColor: 'rgba(34, 197, 94, 0.6)',
-                    borderColor: 'rgba(34, 197, 94, 1)',
-                    borderWidth: 1,
-                    fill: true
-                }
-            ]
-
-        */
-
-        // Create stacked area chart
         const ctx = document.getElementById('trendsChart').getContext('2d');
         new Chart(ctx, {
             type: 'line',
