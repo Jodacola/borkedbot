@@ -53,6 +53,7 @@ export class ProjectSnapshotService {
     return this.projectSnapshotRepository.findOne({
       where: { projectId },
       order: { createdAt: 'DESC' },
+      relations: ['project'],
     });
   }
 

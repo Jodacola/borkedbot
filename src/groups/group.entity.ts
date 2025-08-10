@@ -1,5 +1,6 @@
 import { Entity, Column, PrimaryGeneratedColumn, OneToMany } from 'typeorm';
 import { Project } from '../projects/project.entity';
+import { GroupSnapshot } from './group-snapshot.entity';
 
 @Entity()
 export class Group {
@@ -17,4 +18,7 @@ export class Group {
 
   @OneToMany(() => Project, project => project.group)
   projects: Project[];
+
+  @OneToMany(() => GroupSnapshot, snapshot => snapshot.group)
+  snapshots: GroupSnapshot[];
 } 

@@ -4,11 +4,13 @@ import { GroupController } from './group.controller';
 import { GroupService } from './group.service';
 import { Group } from './group.entity';
 import { ProjectModule } from '../projects/project.module';
+import { GroupSnapshot } from './group-snapshot.entity';
+import { GroupSnapshotService } from './group-snapshot.service';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([Group]), ProjectModule],
+  imports: [TypeOrmModule.forFeature([Group]), TypeOrmModule.forFeature([GroupSnapshot]), ProjectModule],
   controllers: [GroupController],
-  providers: [GroupService],
-  exports: [GroupService],
+  providers: [GroupService, GroupSnapshotService],
+  exports: [GroupService, GroupSnapshotService],
 })
-export class GroupModule {}
+export class GroupModule { }

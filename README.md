@@ -68,13 +68,13 @@ $ npm run start:prod
 
 ```bash
 # watch mode
-$ npx tailwindcss -i ./src/main.css -o ./assets/styles.css --watch
+$ npx tailwindcss -i ./src/main.css -o ./src/assets/styles.css --watch
 
 # build mode
-$ npx tailwindcss -i ./src/main.css -o ./assets/styles.css
+$ npx tailwindcss -i ./src/main.css -o ./src/assets/styles.css
 
 # prod build mode
-$ npx tailwindcss -i ./src/main.css -o ./assets/styles.css --minify
+$ npx tailwindcss -i ./src/main.css -o ./src/assets/styles.css --minify
 ```
 
 ### Run tests

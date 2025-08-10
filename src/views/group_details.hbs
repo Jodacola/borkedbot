@@ -3,68 +3,322 @@
 <head>
     <title>BorkedBot - {{group.name}} - Group Status</title>
     <link rel="stylesheet" href="/styles.css">
+    {{#if hasSnapshots}}
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    {{/if}}
 </head>
 
 <body class="bg-gray-100">
     <header class="p-4 space-y-2 bg-white border-b border-gray-200 mb-2">
         <h1 class="text-2xl font-bold">{{group.name}} - Group Status</h1>
-        <a href="/groups" class="inline-flex flex-row items-center gap-1 px-3 py-1 border-blue-300 border-1 rounded-md text-blue-500 hover:text-blue-700 text-xs"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="size-4">
+        <a href="/groups"
+            class="inline-flex flex-row items-center gap-1 px-3 py-1 border-blue-300 border-1 rounded-md text-blue-500 hover:text-blue-700 text-xs"><svg
+                xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
+                stroke="currentColor" class="size-4">
                 <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 19.5 8.25 12l7.5-7.5" />
             </svg> All groups</a>
     </header>
-    <main class="p-4 m-4 bg-white rounded-lg border border-gray-200">
-        <table class="w-full">
-            <thead>
-                <tr class="[&>th]:pb-2 [&>th]:px-2">
-                    <th class="text-left"><h2 class="text-xs font-bold text-gray-400">Project</h2></th>
-                    <th><h2 class="text-xs font-bold text-gray-400">Default Branch Status</h2></th>
-                    <th class="text-center"><h2 class="text-xs font-bold text-gray-400">Open Failing PRs</h2></th>
-                </tr>
-            </thead>
-            <tbody>
-                {{#each projectStates}}
-                <tr class="[&>td]:py-2 hover:bg-gray-100 transition-colors duration-300">
-                    <td class="pl-2">
-                        <a href="/projects/{{this.externalId}}"
-                            class="text-blue-500 hover:text-blue-700">{{this.projectName}}
-                        </a>
-                    </td>
-                    <td class="text-center">
-                        <a href="{{this.url}}/commits/{{this.defaultBranchName}}" target="_blank">
-                            {{#if this.defaultBranchStatus}}
-                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2"
-                                stroke="currentColor" class="h-6 w-6 stroke-[#00cf68] fill-[#d1ffe8] inline">
-                                <path stroke-linecap="round" stroke-linejoin="round"
-                                    d="M9 12.75 11.25 15 15 9.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
-                            </svg>
-                            {{else}}
-                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2"
-                                stroke="currentColor" class="h-6 w-6 inline stroke-[#ff6b46] fill-[#ffd9d0]">
-                                <path stroke-linecap="round" stroke-linejoin="round"
-                                    d="m9.75 9.75 4.5 4.5m0-4.5-4.5 4.5M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
-                            </svg>
-                            {{/if}}
-                        </a>
-                    </td>
-                    <td class="text-center">
-                        {{#eachMax this.failingPrs max=5}}<a href="{{../this.url}}/pull/{{this.number}}"
-                            title="{{../this.projectName}}: PR #{{this.number}}" target="_blank"><svg
-                                xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2"
-                                stroke="currentColor" class="size-6 inline stroke-[#ff6b46] fill-[#ffd9d0]">
-                                <path stroke-linecap="round" stroke-linejoin="round"
-                                    d="m9.75 9.75 4.5 4.5m0-4.5-4.5 4.5M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
-                            </svg></a>{{/eachMax}}{{#if this.manyFailingPrs}}
-                        <a href="/projects/{{this.externalId}}#failingPrs"
-                            class="text-xs italic text-gray-500 cursor-pointer">
-                            +{{this.remainingFailingPrs}} more</a>{{/if}}
-                    </td>
-                </tr>
-                {{/each}}
-            </tbody>
-        </table>
+    <main>
+        <div class="p-4 m-4 bg-white rounded-lg border border-gray-200">
+            <table class="w-full">
+                <thead>
+                    <tr class="[&>th]:pb-2 [&>th]:px-2">
+                        <th class="text-left">
+                            <h2 class="text-xs font-bold text-gray-400">Project</h2>
+                        </th>
+                        <th>
+                            <h2 class="text-xs font-bold text-gray-400">Default Branch Status</h2>
+                        </th>
+                        <th class="text-center">
+                            <h2 class="text-xs font-bold text-gray-400">Open Failing PRs</h2>
+                        </th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {{#each projectStates}}
+                    <tr class="[&>td]:py-2 hover:bg-gray-100 transition-colors duration-300">
+                        <td class="pl-2">
+                            <a href="/projects/{{this.externalId}}"
+                                class="text-blue-500 hover:text-blue-700">{{this.projectName}}
+                            </a>
+                        </td>
+                        <td class="text-center">
+                            <a href="{{this.url}}/commits/{{this.defaultBranchName}}" target="_blank">
+                                {{#if this.defaultBranchStatus}}
+                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2"
+                                    stroke="currentColor" class="h-6 w-6 stroke-[#00cf68] fill-[#d1ffe8] inline">
+                                    <path stroke-linecap="round" stroke-linejoin="round"
+                                        d="M9 12.75 11.25 15 15 9.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
+                                </svg>
+                                {{else}}
+                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2"
+                                    stroke="currentColor" class="h-6 w-6 inline stroke-[#ff6b46] fill-[#ffd9d0]">
+                                    <path stroke-linecap="round" stroke-linejoin="round"
+                                        d="m9.75 9.75 4.5 4.5m0-4.5-4.5 4.5M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
+                                </svg>
+                                {{/if}}
+                            </a>
+                        </td>
+                        <td class="text-center">
+                            {{#eachMax this.failingPrs max=5}}<a href="{{../this.url}}/pull/{{this.number}}"
+                                title="{{../this.projectName}}: PR #{{this.number}}" target="_blank"><svg
+                                    xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2"
+                                    stroke="currentColor" class="size-6 inline stroke-[#ff6b46] fill-[#ffd9d0]">
+                                    <path stroke-linecap="round" stroke-linejoin="round"
+                                        d="m9.75 9.75 4.5 4.5m0-4.5-4.5 4.5M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
+                                </svg></a>{{/eachMax}}{{#if this.manyFailingPrs}}
+                            <a href="/projects/{{this.externalId}}#failingPrs"
+                                class="text-xs italic text-gray-500 cursor-pointer">
+                                +{{this.remainingFailingPrs}} more</a>{{/if}}
+                        </td>
+                    </tr>
+                    {{/each}}
+                </tbody>
+            </table>
+        </div>
+        <div class="p-4 m-4 bg-white rounded-lg border border-gray-200">
+            <h2 class="text-lg font-bold pb-2">Trends <a href="#trends" class="inline-block ml-1" name="trends"><svg
+                        xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
+                        stroke="currentColor" class="inline-block size-4 stroke-gray-400 hover:stroke-gray-600">
+                        <path stroke-linecap="round" stroke-linejoin="round"
+                            d="M13.19 8.688a4.5 4.5 0 0 1 1.242 7.244l-4.5 4.5a4.5 4.5 0 0 1-6.364-6.364l1.757-1.757m13.35-.622 1.757-1.757a4.5 4.5 0 0 0-6.364-6.364l-4.5 4.5a4.5 4.5 0 0 0 1.242 7.244" />
+                    </svg></a>
+            </h2>
+            {{#if hasSnapshots}}
+            <div class="w-full h-64">
+                <canvas id="trendsChart"></canvas>
+            </div>
+            {{#if hasAnyOlderOrNewerSnapshots}}
+            <div class="flex flex-row justify-between">
+                {{#if hasOlderSnapshots}}
+                <a href="/projects/{{project.externalId}}?page={{olderSnapshotsPage}}"
+                    class="inline-flex flex-row items-center gap-1 px-3 py-1 border-blue-300 border-1 rounded-md text-blue-500 hover:text-blue-700 text-xs"><svg
+                        xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
+                        stroke="currentColor" class="size-4 inline-block">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 19.5 8.25 12l7.5-7.5" />
+                    </svg> Older trends</a>
+                {{else}}
+                <a href="#" aria-disabled="true"
+                    class="inline-flex flex-row items-center gap-1 px-3 py-1 border-gray-300 border-1 rounded-md text-gray-300 cursor-default text-xs"><svg
+                        xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
+                        stroke="currentColor" class="size-4 inline-block">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 19.5 8.25 12l7.5-7.5" />
+                    </svg> Older trends</a>
+                {{/if}}
+                {{#if hasNewerSnapshots}}
+                <a href="/projects/{{project.externalId}}?page={{newerSnapshotsPage}}"
+                    class="inline-flex flex-row items-center gap-1 px-3 py-1 border-blue-300 border-1 rounded-md text-blue-500 hover:text-blue-700 text-xs">Newer
+                    trends <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
+                        stroke="currentColor" class="size-4 inline-block">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="m8.25 4.5 7.5 7.5-7.5 7.5" />
+                    </svg></a>
+                {{else}}
+                <a href="#" aria-disabled="true"
+                    class="inline-flex flex-row items-center gap-1 px-3 py-1 border-gray-300 border-1 rounded-md text-gray-300 cursor-default text-xs">Newer
+                    trends <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
+                        stroke="currentColor" class="size-4 inline-block">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="m8.25 4.5 7.5 7.5-7.5 7.5" />
+                    </svg></a>
+                {{/if}}
+            </div>
+            {{/if}}
+            {{else}}
+            <p class="text-gray-300 text-sm">Historical data not yet available.</p>
+            {{/if}}
+        </div>
+        <div class="p-4 m-4 bg-white rounded-lg border border-gray-200">
+            <h2 class="text-lg font-bold pb-2">Open Failing PRs by Project <a href="#failingPrs"
+                    class="inline-block ml-1" name="failingPrs"><svg xmlns="http://www.w3.org/2000/svg" fill="none"
+                        viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"
+                        class="inline-block size-4 stroke-gray-400 hover:stroke-gray-600">
+                        <path stroke-linecap="round" stroke-linejoin="round"
+                            d="M13.19 8.688a4.5 4.5 0 0 1 1.242 7.244l-4.5 4.5a4.5 4.5 0 0 1-6.364-6.364l1.757-1.757m13.35-.622 1.757-1.757a4.5 4.5 0 0 0-6.364-6.364l-4.5 4.5a4.5 4.5 0 0 0 1.242 7.244" />
+                    </svg></a></h2>
+            {{#unless hasFailingPrs}}
+            <p class="text-gray-300 text-sm">There are currently no failing PRs.</p>
+            {{/unless}}
+            {{#each projectsWithFailingPrs}}
+            <h3 class="font-bold pb-2 mt-2">{{this.projectName}}</h3>
+            <table class="w-full">
+                <tbody>
+                    {{#each this.failingPrs}}
+                    <tr class="hover:bg-gray-100 transition-colors duration-300">
+                        <td class="pl-2 align-top py-1 w-[100px]">
+                            <a href="{{../this.url}}/pull/{{this.number}}" target="_blank"
+                                class="text-blue-500 hover:text-blue-700 text-sm font-black">
+                                #{{this.number}}
+                            </a>
+                        </td>
+                        <td class="pl-2 py-1">
+                            <a href="{{../this.url}}/pull/{{this.number}}" target="_blank"
+                                class="text-blue-500 hover:text-blue-700 text-sm">
+                                {{this.title}}
+                            </a>
+                        </td>
+                    </tr>
+                    {{/each}}
+                </tbody>
+            </table>
+            {{/each}}
+        </div>
     </main>
     <footer class="p-4 text-center text-gray-300 text-sm"><a href="https://github.com/Jodacola/borkedbot"
             target="_blank">BorkedBot Open
             Source Project</a></footer>
+    {{#if hasSnapshots}}
+    <script>
+        // Prepare chart data from snapshots
+        const snapshots = [
+        {{#each snapshots.snapshots}}
+        {
+            id: "{{this.id}}",
+                createdAt: new Date("{{this.createdAt}}"),
+                    snapshotDetails: {{{this.snapshotDetails}}}
+        } {{#unless @last}}, {{/unless}}
+        {{/each}}
+        ];
+
+        const sortedSnapshots = snapshots.sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt));
+
+        const projectIdsToNames = {};
+
+        for (const snapshot of sortedSnapshots) {
+            for (const detail of snapshot.snapshotDetails) {
+                projectIdsToNames[detail.projectId] = detail.projectName;
+            }
+        }
+
+        const projectIds = Object.keys(projectIdsToNames);
+
+        const snapshotDetails = [];
+
+        for (const snapshot of sortedSnapshots) {
+            const snapshotData = {
+                createdAt: snapshot.createdAt
+            };
+
+            for (const projectId of projectIds) {
+                snapshotData[projectId + "-failingPrs"] = 0;
+                snapshotData[projectId + "-successfulPrs"] = 0;
+            }
+
+            for (const detail of snapshot.snapshotDetails) {
+                snapshotData[detail.projectId + "-failingPrs"] = detail.failedPrs;
+                snapshotData[detail.projectId + "-successfulPrs"] = detail.totalPrs - detail.failedPrs;
+            }
+
+            snapshotDetails.push(snapshotData);
+        }
+
+        const chartData = {
+            labels: sortedSnapshots.map(s => {
+                const date = new Date(s.createdAt);
+                const month = String(date.getMonth() + 1).padStart(2, '0');
+                const day = String(date.getDate()).padStart(2, '0');
+                let hour = date.getHours();
+                const minute = String(date.getMinutes()).padStart(2, '0');
+                const ampm = hour >= 12 ? 'PM' : 'AM';
+                hour = hour % 12;
+                hour = hour ? hour : 12; // the hour '0' should be '12'
+                return `${month}/${day} ${hour}:${minute} ${ampm}`;
+            }),
+            datasets: projectIds.flatMap(projectId => [{
+                label: projectIdsToNames[projectId] + ' - Failing PRs',
+                data: snapshotDetails.map(s => s[projectId + "-failingPrs"]),
+                borderWidth: 1,
+                fill: true
+            }, {
+                label: projectIdsToNames[projectId] + ' - Successful PRs',
+                data: snapshotDetails.map(s => s[projectId + "-successfulPrs"]),
+                borderWidth: 1,
+                fill: true
+            }])
+        };
+
+        /*
+
+        datasets: [
+                {
+                    label: 'Failing PRs',
+                    data: sortedSnapshots.map(s => s.numberOfFailedPrs),
+                    backgroundColor: 'rgba(239, 68, 68, 0.6)',
+                    borderColor: 'rgba(239, 68, 68, 1)',
+                    borderWidth: 1,
+                    fill: true
+                },
+                {
+                    label: 'Passing/Pending PRs',
+                    data: sortedSnapshots.map(s => s.numberOfPrs - s.numberOfFailedPrs),
+                    backgroundColor: 'rgba(34, 197, 94, 0.6)',
+                    borderColor: 'rgba(34, 197, 94, 1)',
+                    borderWidth: 1,
+                    fill: true
+                }
+            ]
+
+        */
+
+        // Create stacked area chart
+        const ctx = document.getElementById('trendsChart').getContext('2d');
+        new Chart(ctx, {
+            type: 'line',
+            data: chartData,
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    x: {
+                        stacked: true,
+                        title: {
+                            display: true,
+                            text: 'Time',
+                            font: {
+                                weight: 'bold'
+                            }
+                        },
+                        ticks: {
+                            maxRotation: 90,
+                            minRotation: 90,
+                            font: {
+                                size: 8
+                            }
+                        }
+                    },
+                    y: {
+                        stacked: true,
+                        beginAtZero: true,
+                        title: {
+                            display: true,
+                            text: 'Number of PRs',
+                            font: {
+                                weight: 'bold'
+                            }
+                        },
+                        ticks: {
+                            font: {
+                                size: 8
+                            }
+                        }
+                    }
+                },
+                plugins: {
+                    legend: {
+                        display: true,
+                        position: 'bottom'
+                    },
+                    tooltip: {
+                        mode: 'index',
+                        intersect: false
+                    }
+                },
+                interaction: {
+                    mode: 'nearest',
+                    axis: 'x',
+                    intersect: false
+                }
+            }
+        });
+    </script>
+    {{/if}}
 
 </html>

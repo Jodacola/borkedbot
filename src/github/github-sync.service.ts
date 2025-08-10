@@ -1,13 +1,15 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, Not, IsNull } from 'typeorm';
+import { Repository, In } from 'typeorm';
 import { Project } from '../projects/project.entity';
 import { OpenPullRequestService } from '../projects/open-pull-request.service';
 import { GithubService, PullRequestStatus } from './github.service';
 import { ConfigService } from '@nestjs/config';
-import { ProjectService } from '../projects/project.service';
 import { ProjectSnapshotService } from '../projects/project-snapshot.service';
+import { ProjectSnapshot } from 'src/projects/project-snapshot.entity';
+import { Group } from 'src/groups/group.entity';
+import { GroupSnapshotService } from 'src/groups/group-snapshot.service';
 
 @Injectable()
 export class GithubSyncService {
@@ -20,38 +22,68 @@ export class GithubSyncService {
         private openPullRequestService: OpenPullRequestService,
         private githubService: GithubService,
         private configService: ConfigService,
-        private projectService: ProjectService,
-        private projectSnapshotService: ProjectSnapshotService
+        @InjectRepository(Group)
+        private groupRepository: Repository<Group>,
+        private projectSnapshotService: ProjectSnapshotService,
+        private groupSnapshotService: GroupSnapshotService
     ) {
         this.enabled = this.configService.get<string>('github.syncEnabled') === 'true';
     }
 
     @Cron(CronExpression.EVERY_5_MINUTES)
-    async syncAllProjects() {
+    async syncAllGroups() {
         if (!this.enabled) {
             this.logger.log('GitHub sync is disabled');
             return;
         }
 
+        this.logger.log('Starting GitHub sync for all groups');
+        const groups = await this.groupRepository.find({
+            relations: ['projects']
+        });
+
+        const projectIds = Array.from(new Set(groups.flatMap(group => group.projects.map(project => project.id))));
+        const projectSnapshots = await this.syncProjects(projectIds);
+
+        for (const group of groups) {
+            const groupProjectIds = group.projects.map(project => project.id);
+            const groupProjectSnapshots = projectSnapshots.filter(snapshot =>
+                groupProjectIds.includes(snapshot.projectId)
+            );
+
+            await this.updateGroupSnapshot(group, groupProjectSnapshots);
+        }
+    }
+
+    async syncProjects(projectIds: number[]): Promise<ProjectSnapshot[]> {
         this.logger.log('Starting GitHub sync for all projects');
         const projects = await this.projectRepository.find({
-            where: { githubRepo: Not(IsNull()) },
+            where: { id: In(projectIds) },
         });
+
+        const projectSnapshots: ProjectSnapshot[] = [];
 
         for (const project of projects) {
             try {
-                await this.syncProject(project);
+                const projectSnapshot = await this.syncProject(project);
+                if (projectSnapshot) {
+                    projectSnapshots.push(projectSnapshot);
+                }
             } catch (error) {
                 this.logger.error(`Failed to sync project ${project.name}: ${error.message}`);
             }
         }
+
+        this.logger.log(`Successfully synced ${projectSnapshots.length} projects`);
+
+        return projectSnapshots;
     }
 
-    private async syncProject(project: Project) {
+    private async syncProject(project: Project): Promise<ProjectSnapshot | null> {
         const [owner, repo] = project.githubRepo.split('/');
         if (!owner || !repo) {
             this.logger.warn(`Invalid GitHub repo format for project ${project.name}: ${project.githubRepo}`);
-            return;
+            return null;
         }
 
         try {
@@ -95,9 +127,11 @@ export class GithubSyncService {
                 failingPrs: totalFailingPrs,
             });
 
-            await this.updateSnapshot(project, latestPrs, failedPrNumbers);
+            const projectSnapshot = await this.updateProjectSnapshot(project, latestPrs, failedPrNumbers);
 
             this.logger.log(`Successfully synced project ${project.name}`);
+
+            return projectSnapshot;
         } catch (error) {
             this.logger.error(`Error syncing project ${project.name}: ${error.message}`);
             throw error;
@@ -127,8 +161,8 @@ export class GithubSyncService {
         this.logger.log(`Deleting removed PRs for project ${project.name}`);
         const numbersToDelete = existingNumbers.filter(num => !latestNumbers.includes(num));
 
-        this.logger.log(`PRs to keep: ${latestNumbers.length}`);
-        this.logger.log(`PRs to delete: ${numbersToDelete.length}`);
+        this.logger.log(`  PRs to keep: ${latestNumbers.length}`);
+        this.logger.log(`  PRs to delete: ${numbersToDelete.length}`);
 
         if (numbersToDelete.length > 0) {
             this.logger.log(`Deleting PR numbers: ${numbersToDelete}`);
@@ -143,28 +177,49 @@ export class GithubSyncService {
         }
     }
 
-    private async updateSnapshot(project: Project, pullRequests: PullRequestStatus[], failedPrNumbers: number[]) {
-        const lastSnapshot = await this.projectSnapshotService.findLatestByProject(project.id);
-        let addNewSnapshot = !lastSnapshot;
+    private async updateProjectSnapshot(project: Project, pullRequests: PullRequestStatus[], failedPrNumbers: number[]): Promise<ProjectSnapshot> {
+        let currentSnapshot = await this.projectSnapshotService.findLatestByProject(project.id);
+        let addNewSnapshot = !currentSnapshot;
 
-        if (lastSnapshot) {
-            const sortedPrevFailedPrs = [...this.projectSnapshotService.getFailedPrNumbersAsArray(lastSnapshot)].sort((a, b) => a - b);
+        if (currentSnapshot) {
+            const sortedPrevFailedPrs = [...this.projectSnapshotService.getFailedPrNumbersAsArray(currentSnapshot)].sort((a, b) => a - b);
             const sortedNewFailedPrs = [...failedPrNumbers].sort((a, b) => a - b);
 
-            addNewSnapshot = lastSnapshot.createdAt < new Date(Date.now() - 1000 * 60 * 60 * 24) ||
-                lastSnapshot.numberOfPrs !== pullRequests.length ||
-                lastSnapshot.numberOfFailedPrs !== failedPrNumbers.length ||
+            addNewSnapshot = currentSnapshot.createdAt < new Date(Date.now() - 1000 * 60 * 60 * 24) ||
+                currentSnapshot.numberOfPrs !== pullRequests.length ||
+                currentSnapshot.numberOfFailedPrs !== failedPrNumbers.length ||
                 sortedPrevFailedPrs.length !== sortedNewFailedPrs.length ||
                 sortedPrevFailedPrs.some((num, idx) => num !== sortedNewFailedPrs[idx]);
         }
 
         if (addNewSnapshot) {
-            await this.projectSnapshotService.createSnapshot(
+            currentSnapshot = await this.projectSnapshotService.createSnapshot(
                 project.id,
                 pullRequests.length,
                 failedPrNumbers.length,
                 failedPrNumbers
             );
+
+            currentSnapshot.project = project;
         }
+
+        return currentSnapshot!;
+    }
+
+    private async updateGroupSnapshot(group: Group, projectSnapshots: ProjectSnapshot[]) {
+        await this.groupSnapshotService.createSnapshot(
+            group.id,
+            projectSnapshots
+                .sort((a, b) => a.project.name.localeCompare(b.project.name))
+                .map(snapshot => ({
+                    projectId: snapshot.projectId,
+                    projectSnapshotId: snapshot.id,
+                    projectName: snapshot.project.name,
+                    failedPrs: snapshot.numberOfFailedPrs,
+                    totalPrs: snapshot.numberOfPrs
+                }))
+        )
+
+        this.logger.log(`Updated group snapshot for group ${group.name}`);
     }
 }
