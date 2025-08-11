@@ -42,6 +42,8 @@ export class GithubSyncService {
             relations: ['projects']
         });
 
+        const startDate = new Date();
+
         const projectIds = Array.from(new Set(groups.flatMap(group => group.projects.map(project => project.id))));
         const projectSnapshots = await this.syncProjects(projectIds);
 
@@ -51,7 +53,9 @@ export class GithubSyncService {
                 groupProjectIds.includes(snapshot.projectId)
             );
 
-            await this.updateGroupSnapshot(group, groupProjectSnapshots);
+            if (groupProjectSnapshots.some(snapshot => snapshot.createdAt >= startDate)) {
+                await this.updateGroupSnapshot(group, groupProjectSnapshots);
+            }
         }
     }
 
