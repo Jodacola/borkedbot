@@ -77,7 +77,7 @@
             </table>
         </div>
         <div class="p-4 m-4 bg-white rounded-lg border border-gray-200">
-            <h2 class="text-lg font-bold pb-2">Trends <a href="#trends" class="inline-block ml-1" name="trends"><svg
+            <h2 class="text-lg font-bold pb-2">Failing PR Trends <a href="#trends" class="inline-block ml-1" name="trends"><svg
                         xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
                         stroke="currentColor" class="inline-block size-4 stroke-gray-400 hover:stroke-gray-600">
                         <path stroke-linecap="round" stroke-linejoin="round"
@@ -222,17 +222,12 @@
                 hour = hour ? hour : 12; // the hour '0' should be '12'
                 return `${month}/${day} ${hour}:${minute} ${ampm}`;
             }),
-            datasets: projectIds.flatMap(projectId => [{
-                label: projectIdsToNames[projectId] + ' - Failing PRs',
+            datasets: projectIds.flatMap(projectId => { return {
+                label: projectIdsToNames[projectId],
                 data: snapshotDetails.map(s => s[projectId + "-failingPrs"]),
                 borderWidth: 1,
                 fill: true
-            }, {
-                label: projectIdsToNames[projectId] + ' - Successful PRs',
-                data: snapshotDetails.map(s => s[projectId + "-successfulPrs"]),
-                borderWidth: 1,
-                fill: true
-            }])
+            };})
         };
 
         const ctx = document.getElementById('trendsChart').getContext('2d');
@@ -284,7 +279,18 @@
                     },
                     tooltip: {
                         mode: 'index',
-                        intersect: false
+                        intersect: false,
+                        callbacks: {
+                            footer: function(context) {
+                                let sum = 0;
+
+                                context.forEach(function(tooltipItem) {
+                                    sum += tooltipItem.parsed.y;
+                                });
+
+                                return "Total failing PRs: " + sum;
+                            }
+                        }
                     }
                 },
                 interaction: {
