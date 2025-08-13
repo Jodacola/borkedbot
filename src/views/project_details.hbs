@@ -6,14 +6,30 @@
     {{#if hasSnapshots}}
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     {{/if}}
+    {{#if autoRefresh}}
+    <meta http-equiv="refresh" content="10">
+    {{/if}}
 </head>
 
 <body class="bg-gray-100">
-    <header class="p-4 space-y-2 bg-white border-b border-gray-200 mb-2">
-        <h1 class="text-2xl font-bold">{{project.group.name}} - {{project.name}} - Status</h1>
-        <a href="/groups/{{project.group.externalId}}" class="inline-flex flex-row items-center gap-1 px-3 py-1 border-blue-300 border-1 rounded-md text-blue-500 hover:text-blue-700 text-xs"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="size-4">
-                <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 19.5 8.25 12l7.5-7.5" />
-            </svg> All {{project.group.name}} projects</a>
+    <header class="p-4 space-y-2 bg-white border-b border-gray-200 mb-2 flex flex-row justify-between items-center">
+        <div class="flex-1">
+            <h1 class="text-2xl font-bold">{{project.group.name}} - {{project.name}} - Status</h1>
+            <a href="/groups/{{project.group.externalId}}" class="inline-flex flex-row items-center gap-1 px-3 py-1 border-blue-300 border-1 rounded-md text-blue-500 hover:text-blue-700 text-xs"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="size-4">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 19.5 8.25 12l7.5-7.5" />
+                </svg> All {{project.group.name}} projects</a>
+        </div>
+        <div>
+            {{#if this.autoRefresh}}
+            <a class="inline-flex flex-row items-center gap-1 px-3 py-1 border-gray-300 border-1 rounded-md text-xs" href="/projects/{{project.externalId}}?refresh=false&page={{snapshots.page}}"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="size-6 inline-block stroke-green-500">
+  <path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75 11.25 15 15 9.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
+</svg> Auto-refresh (enabled)</a>
+            {{else}}
+            <a class="inline-flex flex-row items-center gap-1 px-3 py-1 border-gray-300 border-1 rounded-md text-xs" href="/projects/{{project.externalId}}?refresh=true&page={{snapshots.page}}"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="size-6 inline-block stroke-red-500">
+  <path stroke-linecap="round" stroke-linejoin="round" d="m9.75 9.75 4.5 4.5m0-4.5-4.5 4.5M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
+</svg> Auto-refresh (disabled)</a>
+            {{/if}}
+        </div>
     </header>
     <main>
         <div
@@ -45,7 +61,7 @@
             {{#if hasAnyOlderOrNewerSnapshots}}
             <div class="flex flex-row justify-between">
             {{#if hasOlderSnapshots}}
-            <a href="/projects/{{project.externalId}}?page={{olderSnapshotsPage}}" class="inline-flex flex-row items-center gap-1 px-3 py-1 border-blue-300 border-1 rounded-md text-blue-500 hover:text-blue-700 text-xs"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="size-4 inline-block">
+            <a href="/projects/{{project.externalId}}?page={{olderSnapshotsPage}}&refresh={{autoRefresh}}" class="inline-flex flex-row items-center gap-1 px-3 py-1 border-blue-300 border-1 rounded-md text-blue-500 hover:text-blue-700 text-xs"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="size-4 inline-block">
                 <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 19.5 8.25 12l7.5-7.5" />
             </svg> Older trends</a>
             {{else}}
@@ -54,7 +70,7 @@
             </svg> Older trends</a>
             {{/if}}
             {{#if hasNewerSnapshots}}
-            <a href="/projects/{{project.externalId}}?page={{newerSnapshotsPage}}" class="inline-flex flex-row items-center gap-1 px-3 py-1 border-blue-300 border-1 rounded-md text-blue-500 hover:text-blue-700 text-xs">Newer trends <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="size-4 inline-block">
+            <a href="/projects/{{project.externalId}}?page={{newerSnapshotsPage}}&refresh={{autoRefresh}}" class="inline-flex flex-row items-center gap-1 px-3 py-1 border-blue-300 border-1 rounded-md text-blue-500 hover:text-blue-700 text-xs">Newer trends <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="size-4 inline-block">
                 <path stroke-linecap="round" stroke-linejoin="round" d="m8.25 4.5 7.5 7.5-7.5 7.5" />
             </svg></a>
             {{else}}
@@ -200,7 +216,18 @@
                     },
                     tooltip: {
                         mode: 'index',
-                        intersect: false
+                        intersect: false,
+                        callbacks: {
+                            footer: function (context) {
+                                let sum = 0;
+
+                                context.forEach(function (tooltipItem) {
+                                    sum += tooltipItem.parsed.y;
+                                });
+
+                                return "Total PRs: " + sum;
+                            }
+                        }
                     }
                 },
                 interaction: {

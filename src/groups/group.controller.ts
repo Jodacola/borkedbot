@@ -23,7 +23,8 @@ export class GroupController {
     @Render('group_details.hbs')
     async groupDetails(
         @Param('groupId') groupId: string,
-        @Query('page') page?: string) {
+        @Query('page') page?: string,
+        @Query('refresh') refresh?: string) {
         const group = await this.groupService.findByExternalId(groupId);
 
         if (!group) {
@@ -62,7 +63,7 @@ export class GroupController {
         const paginatedSnapshots = await this.groupSnapshotService.findPaginatedByGroup(group.id, pageNumber);
 
         return {
-            group: { name: group.name },
+            group,
             projectStates,
             snapshots: paginatedSnapshots,
             hasOlderSnapshots: paginatedSnapshots.page < paginatedSnapshots.totalPages,
@@ -72,7 +73,8 @@ export class GroupController {
             hasAnyOlderOrNewerSnapshots: paginatedSnapshots.page < paginatedSnapshots.totalPages || paginatedSnapshots.page > 1,
             hasSnapshots: paginatedSnapshots.snapshots.length > 0,
             hasFailingPrs: projectsWithFailingPrs.length > 0,
-            projectsWithFailingPrs
+            projectsWithFailingPrs,
+            autoRefresh: refresh === 'true'
         };
     }
 }

@@ -15,8 +15,8 @@ export class ProjectController {
   @Render('project_details.hbs')
   async getProjectByExternalId(
     @Param('externalId') externalId: string,
-    @Query('page') page?: string
-  ) {
+    @Query('page') page?: string,
+    @Query('refresh') refresh?: string) {
     const project = await this.projectService.findByExternalId(externalId);
 
     if (!project) {
@@ -42,7 +42,8 @@ export class ProjectController {
       newerSnapshotsPage: paginatedSnapshots.page - 1,
       hasAnyOlderOrNewerSnapshots: paginatedSnapshots.page < paginatedSnapshots.totalPages || paginatedSnapshots.page > 1,
       hasFailingPrs: failingPrs.length > 0,
-      hasSnapshots: paginatedSnapshots.snapshots.length > 0
+      hasSnapshots: paginatedSnapshots.snapshots.length > 0,
+      autoRefresh: refresh === 'true'
     };
   }
 } 
