@@ -22,26 +22,29 @@ export class ConfigService implements OnModuleInit {
   }
 
   async onModuleInit() {
-    await this.loadConfig();
-    await this.syncDatabase();
+    if (await this.loadConfig()) {
+      await this.syncDatabase();
+    }
   }
 
-  private async loadConfig(): Promise<void> {
+  private async loadConfig(): Promise<boolean> {
     try {
       const configPath = join(__dirname, '..', '..', 'data', 'projectConfig.json');
       const configData = readFileSync(configPath, 'utf8');
       this.config = JSON.parse(configData);
       this.logger.log('Configuration loaded successfully');
+      return true;
     } catch (error) {
-      this.logger.error('Failed to load configuration:', error);
-      throw new Error('Failed to load application configuration');
+      this.logger.warn('Failed to load configuration:', error);
+      this.logger.warn('You can ignore the warning above if you are not using the projectConfig.json to configure your groups and projects (either because you already set up your projects as desired or you\'re using MCP capabilities to manage your configuration)');
+      return false;
     }
   }
 
   private async syncDatabase(): Promise<void> {
     try {
       this.logger.log('Starting database synchronization...');
-      
+
       for (const configGroup of this.config.groups) {
         // Create or update group
         const group = await this.groupService.createOrUpdate(
@@ -62,7 +65,7 @@ export class ConfigService implements OnModuleInit {
           this.logger.log(`Project synchronized: ${project.name} (ID: ${project.id})`);
         }
       }
-      
+
       this.logger.log('Database synchronization completed successfully');
     } catch (error) {
       this.logger.error('Failed to sync database:', error);
@@ -108,7 +111,7 @@ export class ConfigService implements OnModuleInit {
   static getInstance(): ConfigService {
     if (!ConfigService.instance) {
       ConfigService.instance = new ConfigService(
-        new GroupService(null as any),
+        new GroupService(null as any, null as any, null as any, null as any),
         new ProjectService(null as any)
       );
     }

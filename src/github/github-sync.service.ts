@@ -37,6 +37,11 @@ export class GithubSyncService {
             return;
         }
 
+        if (!this.githubService.isEnabled()) {
+            this.logger.warn('GitHub is disabled, skipping sync; ensure the GithubService is properly configured');
+            return;
+        }
+
         this.logger.log('Starting GitHub sync for all groups');
         const groups = await this.groupRepository.find({
             relations: ['projects']

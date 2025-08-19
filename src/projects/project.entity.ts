@@ -42,9 +42,9 @@ export class Project {
   @JoinColumn()
   group: Group;
 
-  @OneToMany(() => OpenPullRequest, openPullRequest => openPullRequest.project)
+  @OneToMany(() => OpenPullRequest, openPullRequest => openPullRequest.project, { cascade: true, onDelete: 'CASCADE' })
   openPullRequests: OpenPullRequest[];
 
-  @OneToMany(() => ProjectSnapshot, snapshot => snapshot.project)
+  @OneToMany(() => ProjectSnapshot, snapshot => snapshot.project, { cascade: true, onDelete: 'CASCADE' })
   snapshots: ProjectSnapshot[];
 }

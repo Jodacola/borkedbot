@@ -25,53 +25,35 @@ export class GroupController {
         @Param('groupId') groupId: string,
         @Query('page') page?: string,
         @Query('refresh') refresh?: string) {
-        const group = await this.groupService.findByExternalId(groupId);
-
-        if (!group) {
-            throw new NotFoundException(`Group with ID '${groupId}' not found`);
-        }
 
         let pageNumber = page ? parseInt(page) : 1;
         if (isNaN(pageNumber)) {
             pageNumber = 1;
         }
 
-        const projects = await this.projectService.findByGroup(group.id);
+        const { group, projects, snapshots } = await this.groupService.findGroupWithProjectInfo(groupId, pageNumber);
 
-        projects.sort((a, b) => a.name.localeCompare(b.name));
+        const viewProjects = projects.map(p => ({
+            ...p,
+            prs: undefined,
+            failingPrCount: p.failingPrs,
+            manyFailingPrs: p.failingPrs > 5,
+            remainingFailingPrs: Math.max(p.failingPrs - 5, 0),
+            failingPrs: p.prs.filter(pr => !pr.allChecksPassed)
+        }));
 
-        const projectStates = await Promise.all(projects.map(async project => ({
-            id: project.id,
-            externalId: project.externalId,
-            url: project.url,
-            projectName: project.name,
-            defaultBranchName: project.defaultBranchName,
-            defaultBranchStatus: project.defaultBranchStatus,
-            failingPrCount: project.failingPrs,
-            manyFailingPrs: project.failingPrs > 5,
-            remainingFailingPrs: Math.max(project.failingPrs - 5, 0),
-            lastUpdated: new Date().toISOString().split('T')[0],
-            failingPrs: (await this.openPullRequestService.findByProject(project.id)).filter(pr => !pr.allChecksPassed)
-        })));
-
-        const projectsWithFailingPrs = projectStates.filter(state => state.failingPrs.length > 0);
-
-        projectStates.forEach(state => {
-            state.failingPrs.sort((a, b) => b.number - a.number);
-        });
-
-        const paginatedSnapshots = await this.groupSnapshotService.findPaginatedByGroup(group.id, pageNumber);
+        const projectsWithFailingPrs = viewProjects.filter(state => state.failingPrs.length > 0);
 
         return {
             group,
-            projectStates,
-            snapshots: paginatedSnapshots,
-            hasOlderSnapshots: paginatedSnapshots.page < paginatedSnapshots.totalPages,
-            olderSnapshotsPage: paginatedSnapshots.page + 1,
-            hasNewerSnapshots: paginatedSnapshots.page > 1,
-            newerSnapshotsPage: paginatedSnapshots.page - 1,
-            hasAnyOlderOrNewerSnapshots: paginatedSnapshots.page < paginatedSnapshots.totalPages || paginatedSnapshots.page > 1,
-            hasSnapshots: paginatedSnapshots.snapshots.length > 0,
+            projects: viewProjects,
+            snapshots,
+            hasOlderSnapshots: snapshots.page < snapshots.totalPages,
+            olderSnapshotsPage: snapshots.page + 1,
+            hasNewerSnapshots: snapshots.page > 1,
+            newerSnapshotsPage: snapshots.page - 1,
+            hasAnyOlderOrNewerSnapshots: snapshots.page < snapshots.totalPages || snapshots.page > 1,
+            hasSnapshots: snapshots.snapshots.length > 0,
             hasFailingPrs: projectsWithFailingPrs.length > 0,
             projectsWithFailingPrs,
             autoRefresh: refresh === 'true'

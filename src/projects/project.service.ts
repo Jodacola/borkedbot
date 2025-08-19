@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Project } from './project.entity';
@@ -11,8 +11,8 @@ export class ProjectService {
     private projectRepository: Repository<Project>,
   ) { }
 
-  async findByExternalId(externalId: string): Promise<Project | null> {
-    return this.projectRepository.findOne({ where: { externalId }, relations: ['group'] });
+  async findByExternalId(externalId: string, relations = ['group']): Promise<Project | null> {
+    return this.projectRepository.findOne({ where: { externalId }, relations });
   }
 
   async createOrUpdate(
@@ -53,5 +53,15 @@ export class ProjectService {
       where: { group: { id: groupId } },
       relations: ['group']
     });
+  }
+
+  async deleteProject(externalId: string): Promise<void> {
+    const project = await this.findByExternalId(externalId);
+    
+    if (!project) {
+      throw new NotFoundException(`Project with ID '${externalId}' not found`);
+    }
+
+    await this.projectRepository.remove(project);
   }
 } 

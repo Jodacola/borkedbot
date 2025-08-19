@@ -16,9 +16,9 @@ export class Group {
   @Column({ type: 'datetime', default: () => 'CURRENT_TIMESTAMP' })
   createdAt: Date;
 
-  @OneToMany(() => Project, project => project.group)
+  @OneToMany(() => Project, project => project.group, { cascade: true, onDelete: 'CASCADE' })
   projects: Project[];
 
-  @OneToMany(() => GroupSnapshot, snapshot => snapshot.group)
+  @OneToMany(() => GroupSnapshot, snapshot => snapshot.group, { cascade: true, onDelete: 'CASCADE' })
   snapshots: GroupSnapshot[];
 } 

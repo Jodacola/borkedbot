@@ -10,6 +10,9 @@
     <h1 class="text-2xl font-bold">Available Groups</h1>
   </header>
   <main class="p-4 m-4 bg-white rounded-lg border border-gray-200">
+    {{#unless groups.length}}
+      <p class=" bg-yellow-100 p-4 rounded-lg border border-yellow-300 text-sm text-yellow-600">No groups found. You can configure groups using the MCP capabilities or by adding/editing the <code>data/projectConfig.json</code> file (see the sample <code>data/projectConfig.example.json</code> file for inspiration).</p>
+    {{/unless}}
     <ul>
       {{#each groups}}
       <li>
@@ -23,7 +26,7 @@
         class="size-4 inline opacity-50">
         <path stroke-linecap="round" stroke-linejoin="round"
           d="M13.19 8.688a4.5 4.5 0 0 1 1.242 7.244l-4.5 4.5a4.5 4.5 0 0 1-6.364-6.364l1.757-1.757m13.35-.622 1.757-1.757a4.5 4.5 0 0 0-6.364-6.364l-4.5 4.5a4.5 4.5 0 0 0 1.242 7.244" />
-      </svg> Read more about how to configure additional groups
+      </svg> Read more about how to use MCP capabilities or configure groups and projects manually
     </a>
   </main>
   <footer class="p-4 text-center text-gray-300 text-sm"><a href="https://github.com/Jodacola/borkedbot"

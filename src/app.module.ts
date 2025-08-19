@@ -10,6 +10,7 @@ import { GroupModule } from './groups/group.module';
 import { ProjectModule } from './projects/project.module';
 import { GithubModule } from './github/github.module';
 import { ConfigModule } from './config/config.module';
+import { BorkedMcpModule } from './borked-mcp/borked-mcp.module';
 
 @Module({
   imports: [
@@ -26,7 +27,8 @@ import { ConfigModule } from './config/config.module';
     }),
     GroupModule,
     ProjectModule,
-    GithubModule
+    GithubModule,
+    BorkedMcpModule
   ],
   controllers: [AppController],
   providers: [AppService],

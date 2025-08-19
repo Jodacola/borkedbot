@@ -15,7 +15,7 @@
     <header class="p-4 space-y-2 bg-white border-b border-gray-200 mb-2 flex flex-row justify-between items-center">
         <div class="flex-1">
             <h1 class="text-2xl font-bold">{{project.group.name}} - {{project.name}} - Status</h1>
-            <a href="/groups/{{project.group.externalId}}" class="inline-flex flex-row items-center gap-1 px-3 py-1 border-blue-300 border-1 rounded-md text-blue-500 hover:text-blue-700 text-xs"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="size-4">
+            <a href="/groups/{{project.group.externalId}}?refresh={{autoRefresh}}" class="inline-flex flex-row items-center gap-1 px-3 py-1 border-blue-300 border-1 rounded-md text-blue-500 hover:text-blue-700 text-xs"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="size-4">
                     <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 19.5 8.25 12l7.5-7.5" />
                 </svg> All {{project.group.name}} projects</a>
         </div>

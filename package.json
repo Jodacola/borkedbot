@@ -20,6 +20,7 @@
     "test:e2e": "jest --config ./test/jest-e2e.json"
   },
   "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.17.3",
     "@nestjs/common": "^11.0.1",
     "@nestjs/config": "^4.0.2",
     "@nestjs/core": "^11.0.1",
@@ -27,13 +28,14 @@
     "@nestjs/schedule": "^6.0.0",
     "@nestjs/typeorm": "^11.0.0",
     "@octokit/rest": "^22.0.0",
+    "@rekog/mcp-nest": "^1.8.1",
     "@tailwindcss/cli": "^4.1.8",
-    "dotenv": "^16.5.0",
     "hbs": "^4.2.0",
     "reflect-metadata": "^0.2.2",
     "sqlite3": "^5.1.7",
     "tailwindcss": "^4.1.8",
-    "typeorm": "^0.3.24"
+    "typeorm": "^0.3.24",
+    "zod": "^3.25.76"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3.2.0",

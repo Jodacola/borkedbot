@@ -33,22 +33,30 @@ export interface RepositoryStatus {
 @Injectable()
 export class GithubService {
     private readonly logger = new Logger(GithubService.name);
-    private octokit: Octokit;
+    private enabled = false;
+    private octokit: Octokit | null = null;
 
     constructor(private configService: ConfigService) {
         const token = this.configService.get<string>('github.token');
         if (!token) {
-            throw new Error('GitHub token is not configured');
+            this.logger.error('GitHub token is not configured. Please set the GITHUB_TOKEN environment variable or add it to your .env file.');
+            return;
         }
+
+        this.enabled = true;
 
         this.octokit = new Octokit({
             auth: token,
         });
     }
 
+    public isEnabled() {
+        return this.enabled;
+    }
+
     async getRepositoryInfo(owner: string, repo: string) {
         this.logger.log(`Getting repository info for ${owner}/${repo}`);
-        const { data } = await this.octokit.repos.get({
+        const { data } = await this.octokit!.repos.get({
             owner,
             repo,
         });
@@ -66,7 +74,7 @@ export class GithubService {
         let page = 1;
         while (true) {
             this.logger.log(`Getting checks for ${owner}/${repo}@${ref} (page ${page})`);
-            const result = await this.octokit.checks.listForRef({
+            const result = await this.octokit!.checks.listForRef({
                 owner,
                 repo,
                 ref,
@@ -112,7 +120,7 @@ export class GithubService {
 
         while (true) {
             this.logger.log(`Getting pull requests for ${owner}/${repo} (page ${page})`);
-            const result = await this.octokit.pulls.list({
+            const result = await this.octokit!.pulls.list({
                 owner,
                 repo,
                 state: 'open',
@@ -183,13 +191,13 @@ export class GithubService {
 
     async getRepositoryStatus(owner: string, repo: string): Promise<RepositoryStatus> {
         this.logger.log(`Getting repository status for ${owner}/${repo}`);
-        const { data: repoInfo } = await this.octokit.repos.get({
+        const { data: repoInfo } = await this.octokit!.repos.get({
             owner,
             repo,
         });
 
         // Get the latest commit on the default branch
-        const { data: latestCommit } = await this.octokit.repos.getBranch({
+        const { data: latestCommit } = await this.octokit!.repos.getBranch({
             owner,
             repo,
             branch: repoInfo.default_branch,
